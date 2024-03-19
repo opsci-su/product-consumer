@@ -19,7 +19,7 @@ const consumer = kafka.consumer({ groupId: 'product-creator' })
 const producer = kafka.producer()
 
 const consume = async () => {
-  await consumer.connect()
+  await Promise.all([consumer.connect(), producer.connect()])
   await consumer.subscribe({ topic: TOPIC, fromBeginning: BEGINNING })
 
   await consumer.run({
