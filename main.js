@@ -4,7 +4,7 @@ const BROKER_2 = process.env.BROKER_2 || 'localhost:9092'
 const BROKER_3 = process.env.BROKER_3 || 'localhost:9092'
 const TOKEN = process.env.STRAPI_TOKEN || ''
 const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:8080'
-const TOPIC = process.env.TOPIC || 'product13'
+const TOPIC = process.env.TOPIC || 'product'
 const BEGINNING = process.env.BEGINNING == 'true' || 'false'
 const ERROR_TOPIC = process.env.ERROR_TOPIC || 'errors'
 const MAX_RETRY = 5; // Maximum number of retries for processing a message
@@ -34,8 +34,9 @@ const producer = kafka.producer({
 
 
 const consume = async () => {
-  await consumer.connect();
-
+  // await consumer.connect();
+  await Promise.all([consumer.connect(), producer.connect()])
+  // await consumer.subscribe({ topic: TOPIC, fromBeginning: BEGINNING })
   await consumer.subscribe({ topic: TOPIC });
 
   await consumer.run({
@@ -134,7 +135,7 @@ const sendErrorMessage = async (error, message) => {
 };
 
 const createProduct = async (product) => {
-  const res = await fetch(STRAPI_URL + '/api/products', {
+  /*const res = await fetch(STRAPI_URL + '/api/products', {
     method: 'POST',
     body: JSON.stringify({
       data: product,
@@ -147,8 +148,8 @@ const createProduct = async (product) => {
   if (res.status === 200) {
     const response = await res.json()
     return response
-  }
-  return 'error'
+  }*/
+  return 'error ok'
 }
 
 await consume()
