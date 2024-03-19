@@ -135,7 +135,7 @@ const sendErrorMessage = async (error, message) => {
 };
 
 const createProduct = async (product) => {
-  /*const res = await fetch(STRAPI_URL + '/api/products', {
+  const res = await fetch(STRAPI_URL + '/api/products', {
     method: 'POST',
     body: JSON.stringify({
       data: product,
@@ -148,7 +148,7 @@ const createProduct = async (product) => {
   if (res.status === 200) {
     const response = await res.json()
     return response
-  }*/
+  }
   return 'error ok'
 }
 
