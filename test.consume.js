@@ -1,5 +1,6 @@
 import { Kafka } from 'kafkajs'
 import { faker } from '@faker-js/faker'
+import fs from 'fs'
 
 const BROKER_1 = process.env.BROKER_1 || 'localhost:9092'
 const BROKER_2 = process.env.BROKER_2 || 'localhost:9092'
@@ -35,3 +36,14 @@ const produceProduct = async (products) => {
 }
 
 await produceProduct(produce(10))
+//
+//
+// fs.writeFileSync(
+//   '../product-producer/products.json',
+//   [
+//     'name,description,stock_available,barcode,status',
+//     ...produce(200).map((r) =>
+//       [r.name, r.description, r.stock_available, r.barcode, r.status].join(',')
+//     ),
+//   ].join('\n')
+// )
