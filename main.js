@@ -10,7 +10,7 @@ const ERROR_TOPIC = process.env.ERROR_TOPIC || 'errors'
 const MAX_RETRY = 5 // Maximum number of retries for processing a message
 
 const log = (...str) => console.log(`${new Date().toUTCString()}: `, ...str)
-log(JSON.stringify(BROKER_1, BROKER_2, BROKER_3))
+log(JSON.stringify({ BROKER_1, BROKER_2, BROKER_3 }))
 const kafka = new Kafka({
   clientId: 'product-consumer',
   brokers: [BROKER_1, BROKER_2, BROKER_3],
