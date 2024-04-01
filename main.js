@@ -2,10 +2,7 @@ import { Kafka } from 'kafkajs'
 const BROKER_1 = process.env.BROKER_1 || 'localhost:9092'
 const BROKER_2 = process.env.BROKER_2 || 'localhost:9092'
 const BROKER_3 = process.env.BROKER_3 || 'localhost:9092'
-const TOKEN = process.env.STRAPI_TOKEN || ''
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:8080'
 const TOPIC = process.env.TOPIC || 'product'
-const BEGINNING = process.env.BEGINNING == 'true' || 'false'
 const ERROR_TOPIC = process.env.ERROR_TOPIC || 'errors'
 const MAX_RETRY = 5; // Maximum number of retries for processing a message
 
@@ -33,64 +30,67 @@ const producer = kafka.producer({
 
 
 
+
 const consume = async () => {
-  // await consumer.connect();
-  await Promise.all([consumer.connect(), producer.connect()])
-  // await consumer.subscribe({ topic: TOPIC, fromBeginning: BEGINNING })
-  await consumer.subscribe({ topic: TOPIC });
+  try {
+    log('Try to connect consumer and producer ...');
+    await Promise.all([consumer.connect(), producer.connect()]);
+    log('consumer and producer connnected !');
+    await consumer.subscribe({ topic: TOPIC });
 
-  await consumer.run({
-    eachBatch: async ({ batch, resolveOffset, heartbeat, commitOffsetsIfNecessary, uncommittedOffsets, isRunning }) => {
-      let partition = batch.partition;
+    await consumer.run({
+      eachBatch: async ({ batch, resolveOffset, heartbeat, commitOffsetsIfNecessary, uncommittedOffsets, isRunning }) => {
+        let partition = batch.partition;
 
-      // Use Promise.all to handle all messages concurrently
-      await Promise.all(batch.messages.map(async (message) => {
-        let retries = 0;
-        let processed = false;
+        await Promise.all(batch.messages.map(async (message) => {
+          let retries = 0;
+          let processed = false;
+          const strProduct = message.value.toString();
 
-        while (!processed && retries < MAX_RETRY) {
-          try {
-            const strProduct = message.value.toString();
-            const product = JSON.parse(strProduct);
-            log('creating', strProduct);
-            const result = await createProduct(product);
+          while (!processed && retries < MAX_RETRY) {
+            try {
+              const product = JSON.parse(strProduct);
+              log('creating', strProduct);
+              const result = await createProduct(product);
 
-            if (result === 'error') {
-              retries++;
-              if (retries === MAX_RETRY) {
-                await handleOffsetOutOfRange(resolveOffset, strProduct, partition);
+              if (result === 'error') {
+                retries++;
+                if (retries === MAX_RETRY) {
+                  await handleOffsetOutOfRange(resolveOffset, strProduct, partition);
+                  processed = true;
+                }
+              } else {
+                log('created', strProduct);
+                await resolveOffset(message.offset);
                 processed = true;
               }
-            } else {
-              log('created', strProduct);
-              await resolveOffset(message.offset);
-              processed = true;
+            } catch (error) {
+              log('Error processing message:', error.message);
+              if (ERROR_TOPIC) {
+                await sendErrorMessage(error, strProduct);
+              }
+              break;
             }
-          } catch (error) {
-            log('Error processing message:', error.message);
-            if (ERROR_TOPIC) {
-              await sendErrorMessage(error, strProduct);
-            }
-            break;
           }
+
+          if (!processed && retries === MAX_RETRY) {
+            log(`Message processing failed after ${MAX_RETRY} retries, sending to ERROR_TOPIC`);
+            await handleOffsetOutOfRange(resolveOffset, strProduct, partition);
+          }
+        }));
+
+        if (isRunning() && uncommittedOffsets.size > 0) {
+          await commitOffsetsIfNecessary(uncommittedOffsets);
         }
 
-        if (!processed && retries === MAX_RETRY) {
-          log(`Message processing failed after ${MAX_RETRY} retries, sending to ERROR_TOPIC`);
-          await handleOffsetOutOfRange(resolveOffset, strProduct, partition);
-        }
-      }));
+        await heartbeat();
+      },
+    });
 
-      if (isRunning() && uncommittedOffsets.size > 0) {
-        await commitOffsetsIfNecessary(uncommittedOffsets);
-      }
-
-      await heartbeat();
-    },
-  });
-
-
-  await producer.connect();
+  } catch (error) {
+    log('Error in consume function:', error.message);
+    // Handle the error as needed
+  }
 };
 
 const handleOffsetOutOfRange = async (resolveOffset, message, partition) => {
@@ -149,7 +149,7 @@ const createProduct = async (product) => {
     const response = await res.json()
     return response
   }
-  return 'error ok'
+  //return 'error ok'
 }
 
 await consume()
