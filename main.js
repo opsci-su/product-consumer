@@ -29,8 +29,6 @@ const producer = kafka.producer({
 });
 
 
-
-
 const consume = async () => {
   try {
     log('Try to connect consumer and producer ...');
@@ -149,7 +147,6 @@ const createProduct = async (product) => {
     const response = await res.json()
     return response
   }
-  //return 'error ok'
 }
 
 await consume()
