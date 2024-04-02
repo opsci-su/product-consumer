@@ -3,6 +3,7 @@ const BROKER_1 = process.env.BROKER_1 || 'localhost:9092'
 const BROKER_2 = process.env.BROKER_2 || 'localhost:9092'
 const BROKER_3 = process.env.BROKER_3 || 'localhost:9092'
 const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:8080'
+const TOKEN = process.env.STRAPI_TOKEN || ''
 const TOPIC = process.env.TOPIC || 'product'
 const ERROR_TOPIC = process.env.ERROR_TOPIC || 'errors'
 const MAX_RETRY = 5 // Maximum number of retries for processing a message

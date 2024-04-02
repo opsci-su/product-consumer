@@ -1,6 +1,6 @@
 {
   "name": "product-consumer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "main.js",
   "author": "arthur.escriou <arthur.escriou@gmail.com>",
   "license": "MIT",
